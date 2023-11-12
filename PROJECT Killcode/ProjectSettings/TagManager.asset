@@ -11,7 +11,7 @@ TagManager:
   - 
   - Water
   - UI
-  - 
+  - Walls
   - 
   - 
   - 
@@ -55,4 +55,10 @@ TagManager:
     locked: 0
   - name: Interactables
     uniqueID: 3856099257
+    locked: 0
+  - name: UI
+    uniqueID: 3839555295
+    locked: 0
+  - name: Cursor
+    uniqueID: 639098455
     locked: 0
