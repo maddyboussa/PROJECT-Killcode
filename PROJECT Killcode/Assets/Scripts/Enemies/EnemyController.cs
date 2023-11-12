@@ -14,37 +14,38 @@ namespace Killcode.Enemy
     {
         #region FIELDS
         [SerializeField] private GameEvent onEnemyDeath;
+        [SerializeField] private GameEvent onKnockbackTriggered;
         [SerializeField] private Stats stats;
-        [SerializeField] private float damage;
         [SerializeField] private SerializedDictionary<Stat, float> localStats;
-        private Rigidbody2D rb;
-        [SerializeField] private bool isDead;
-
         [SerializeField] private GameObject target;
-        public GameObject Target { get { return target; } set { target = value; } }
-        BoxCollider2D eBoxCollider;
+        private Rigidbody2D rb;
+        private Animator enemyAnimator;
 
-        // get reference to other active enemies
-        private List<GameObject> enemyList;
-
-        private Vector3 direction = new Vector3(0, 0, 0);
-        Vector3 desiredVelocity;
-
-        [Header("Movement Stats")]
+        [Header("Stats")]
+        [SerializeField] private float damage;
+        public bool isDead;
+        private bool isHit;
+        public bool active = false;
+        
+        [Header("Movement")]
         [SerializeField] private bool lerp;
+        public Vector3 position = new Vector3(0, 0, 0);
+        private Vector3 direction = new Vector3(0, 0, 0);
+        #endregion
 
+        #region PROPERTIES
+        public GameObject Target { get { return target; } set { target = value; } }
         #endregion
 
         // Start is called before the first frame update
         void Start()
         {
-            eBoxCollider = GetComponent<BoxCollider2D>();
+            transform.position = position;
             rb = GetComponent<Rigidbody2D>();
             localStats = new SerializedDictionary<Stat, float>(stats.instanceStats);
             isDead = false;
-
-            // make sure this enemy has a reference to all other active enemies
-            enemyList = GameObject.Find("EnemyManager").GetComponent<EnemyManager>().BasicEnemyList;
+            active = false;
+            enemyAnimator = GetComponent<Animator>();
         }
 
         // Update is called once per frame
@@ -64,6 +65,12 @@ namespace Killcode.Enemy
         /// <param name="lerpAmount">Amount to smooth movement by</param>
         private void AddForce(float lerpAmount)
         {
+            // If the enemy is not active, return
+            if(!active)
+            {
+                return;
+            }
+
             SeekPlayer();
 
             // Attempt to get maxSpeed stat and calculate velocity
@@ -92,11 +99,20 @@ namespace Killcode.Enemy
         /// </summary>
         private void SeekPlayer()
         {
-            // get vector from enemy to target position
-            Vector3 steeringDirection = target.transform.position - this.transform.position;
+            // calulcate future position of player
+            Vector3 futurePosition = rb.velocity * 1.0f + (Vector2)target.transform.position;
+
+            // get vector from enemy to future position
+            Vector3 steeringDirection = futurePosition - this.transform.position;
 
             // set direction to vector towards player
             direction = steeringDirection.normalized;
+
+            if (direction.x != 0 || direction.y != 0)
+            {
+                enemyAnimator.SetFloat("X", direction.x);
+                enemyAnimator.SetFloat("Y", direction.y);
+            }
         }
 
         /// <summary>
@@ -105,36 +121,73 @@ namespace Killcode.Enemy
         /// <param name="damageAmount">amount to damage enemy by</param>
         public void TakeDamage(float damageAmount)
         {
-            Debug.Log(damageAmount);
-
             // Try to get the health of the enemy
-            if (localStats.TryGetValue(Stat.hitPoints, out float currentHealth))
+            if (localStats.TryGetValue(Stat.hitPoints, out float currentHealth) && active)
             {
-                // reduce enemy health
-                localStats[Stat.hitPoints] = currentHealth - damageAmount;
-
-                Debug.Log("damage" + localStats[Stat.hitPoints]);
-
-                // check for enemy death
-                if (localStats[Stat.hitPoints] <= 0.0f)
+                // make sure enemy is not already hit
+                if (!isHit)
                 {
-                    isDead = true;
-                    onEnemyDeath.Raise(this, gameObject);
+                    // reduce enemy health
+                    localStats[Stat.hitPoints] = currentHealth - damageAmount;
+
+                    // check for enemy death
+                    if (localStats[Stat.hitPoints] <= 0.0f && !isDead)
+                    {
+                        isDead = true;
+                        onEnemyDeath.Raise(this, gameObject);
+                    }
+
+                    // start i-frames coroutine
+                    StartCoroutine(InvicibilityFrames());
                 }
+                
             }
+        }
+
+        IEnumerator InvicibilityFrames()
+        {
+            isHit = true;
+
+            // set sprite color to red
+            this.GetComponent<SpriteRenderer>().color = Color.red;
+
+            yield return new WaitForSeconds(0.2f);
+
+            // player exits i-frames
+            isHit = false;
+
+            // reset color
+            this.GetComponent<SpriteRenderer>().color = Color.white;
+        }
+
+        /// <summary>
+        /// Activate the enemy
+        /// </summary>
+        /// <param name="sender">The component raising the event</param>
+        /// <param name="data">The data being sent</param>
+        public void ActivateEnemy(Component sender, object data)
+        {
+            active = true;
         }
 
         /// <summary>
         /// Checks for collision between this enemy's box collider and a player's box collider
         /// </summary>
         /// <param name="collision"></param>
-        public void OnCollisionEnter2D(Collision2D collision)
+        public void OnTriggerEnter2D(Collider2D collision)
         {
             // check if colliding with a player
             if (collision.gameObject.GetComponent<PlayerController>())
             {
-                // if colliding, reduce player health according to this enemy's damage
-                collision.gameObject.GetComponent<PlayerController>().TakeDamage(damage);
+                // If active, damage the player
+                if(active)
+                {
+                    // if colliding, reduce player health according to this enemy's damage
+                    collision.gameObject.GetComponent<PlayerController>().TakeDamage(damage);
+
+                    // trigger knockback event
+                    onKnockbackTriggered.Raise(this, collision.gameObject);
+                }
                 
                 return;
             }

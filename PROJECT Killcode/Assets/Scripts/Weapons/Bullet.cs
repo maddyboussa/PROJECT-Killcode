@@ -12,12 +12,26 @@ namespace Killcode.Weapons
         public Vector2 bulletPos;
         public Vector2 bulletDirection;
         public float bulletDamage;
+        public WeaponType weaponType;
+        public object extraWeaponInfo;
 
-        public BulletSpawnInfo(Vector2 bulletPos, Vector2 bulletDirection, float bulletDamage)
+        public BulletSpawnInfo(Vector2 bulletPos, Vector2 bulletDirection, float bulletDamage, WeaponType weaponType)
         {
             this.bulletPos = bulletPos;
             this.bulletDirection = bulletDirection;
             this.bulletDamage = bulletDamage;
+            this.weaponType = weaponType;
+            extraWeaponInfo = null;
+
+        }
+
+        public BulletSpawnInfo(float bulletDamage, WeaponType weaponType, SniperWeaponInfo sniperWeaponInfo)
+        {
+            bulletPos = Vector2.zero;
+            bulletDirection = Vector2.zero;
+            this.bulletDamage = bulletDamage;
+            this.weaponType = weaponType;
+            extraWeaponInfo = sniperWeaponInfo;
         }
     }
 
@@ -26,8 +40,8 @@ namespace Killcode.Weapons
     {
         #region FIELDS
         [SerializeField] private GameEvent onBulletActive;
+        [SerializeField] private GameEvent onKnockbackTriggered;
         [SerializeField] private Rect currentBounds;
-        private Rigidbody2D rb;
 
         public Vector2 direction;
         [SerializeField] private Vector2 velocity;
@@ -36,11 +50,6 @@ namespace Killcode.Weapons
         [SerializeField] private float bulletSpeed;
         private float damage;
         #endregion
-
-        void Start()
-        {
-            rb = GetComponent<Rigidbody2D>();
-        }
 
         // Update is called once per frame
         void Update()
@@ -59,10 +68,10 @@ namespace Killcode.Weapons
         /// </summary>
         private void MoveBullet()
         {
-            // Calculate velocity and add force
-            velocity = direction * bulletSpeed;
+            // Add velocity to bullet position
+            bulletPos += velocity;
 
-            rb.AddForce(velocity, ForceMode2D.Force);
+            transform.position = bulletPos;
 
             // Kill the bullet if out of the bounds
             if (bulletPos.x < currentBounds.xMin || bulletPos.x > currentBounds.xMax || bulletPos.y < currentBounds.yMin || bulletPos.y > currentBounds.yMax)
@@ -84,6 +93,12 @@ namespace Killcode.Weapons
         public void ActivateBullet()
         {
             onBulletActive.Raise(this, currentBounds);
+        }
+
+        public void SetVelocity()
+        {
+            // Set velocity
+            velocity = direction * bulletSpeed;
         }
 
         /// <summary>
@@ -116,6 +131,10 @@ namespace Killcode.Weapons
             if (collision.gameObject.GetComponent<EnemyController>())
             {
                 collision.gameObject.GetComponent<EnemyController>().TakeDamage(damage);
+
+                // trigger knockback event
+                onKnockbackTriggered.Raise(this, collision.gameObject);
+
                 gameObject.SetActive(false);
                 return;
             }

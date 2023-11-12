@@ -18,9 +18,11 @@ namespace Killcode.Player
         [SerializeField] private Stats stats;
         [SerializeField] private SerializedDictionary<Stat, float> localStats;
         private Vector3 direction = new Vector3(0, 0, 0);
+        private Animator playerAnimator;
 
         private bool isFacingRight;
         private bool isDead;
+        private bool isHit;
 
         [Header("Movement Stats")]
         [SerializeField] private bool lerp;
@@ -32,6 +34,8 @@ namespace Killcode.Player
             rb = GetComponent<Rigidbody2D>();
             localStats = new SerializedDictionary<Stat, float>(stats.instanceStats);
             isDead = false;
+            isHit = false;
+            playerAnimator = GetComponent<Animator>();
         }
 
         // Update is called once per frame
@@ -94,6 +98,14 @@ namespace Killcode.Player
         {
             // Get the direction vector based on player input
             direction = context.ReadValue<Vector2>();
+
+            // update directional animation accordingly
+            if (direction.x != 0 || direction.y !=0)
+            {
+                playerAnimator.SetFloat("X", direction.x);
+                playerAnimator.SetFloat("Y", direction.y);
+            }
+
         }
 
         /// <summary>
@@ -105,19 +117,47 @@ namespace Killcode.Player
             // Try to get the health of the player
             if (localStats.TryGetValue(Stat.hitPoints, out float currentHealth))
             {
-                // reduce player health
-                localStats[Stat.hitPoints] = currentHealth - damageAmount;
-
-                // check for player death
-                if (localStats[Stat.hitPoints] <= 0.0f)
+                // if player is not already hit, damage the player
+                if (!isHit)
                 {
-                    isDead = true;
-                    onPlayerDeath.Raise(this, gameObject);
-                }
-            }
+                    // reduce player health
+                    localStats[Stat.hitPoints] = currentHealth - damageAmount;
 
-            // raise event to update game ui (health bar)
-            updateHealthBar.Raise(this, localStats[Stat.hitPoints]);
+                    // check for player death
+                    if (localStats[Stat.hitPoints] <= 0.0f)
+                    {
+                        isDead = true;
+                        onPlayerDeath.Raise(this, gameObject);
+                    }
+
+                    // raise event to update game ui (health bar)
+                    updateHealthBar.Raise(this, localStats[Stat.hitPoints]);
+
+                    // start i-frames coroutine
+                    StartCoroutine(InvicibilityFrames());
+                }
+                
+            }           
+        }
+
+        IEnumerator InvicibilityFrames()
+        {
+            isHit = true;
+
+            // reduce sprite alpha
+            Color temp = this.GetComponent<SpriteRenderer>().color;
+            temp.a = 0.5f;
+            this.GetComponent<SpriteRenderer>().color = temp;
+
+            Debug.Log("coroutine");
+
+            yield return new WaitForSeconds(0.5f);
+
+            // player exits i-frames
+            isHit = false;
+
+            temp.a = 1f;
+            this.GetComponent<SpriteRenderer>().color = temp;
         }
     }
 }

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8ae39fd46a6cf084b9be9ecffbc2f33b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - weaponStats: {instanceID: 0}
+  - onBulletFired: {instanceID: 0}
+  - pierceEffect: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

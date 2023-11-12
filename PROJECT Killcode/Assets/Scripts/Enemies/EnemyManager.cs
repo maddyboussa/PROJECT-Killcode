@@ -9,7 +9,7 @@ namespace Killcode.Enemy
     public class EnemyManager : MonoBehaviour
     {
         #region FIELDS
-
+        [SerializeField] private GameEvent onWaveEnd;
         [SerializeField] private GameObject basicEnemyPrefab;
         [SerializeField] private int numStartEnemies;
         [SerializeField] private GameObject enemyTarget;
@@ -23,14 +23,12 @@ namespace Killcode.Enemy
 
         #endregion
         // Start is called before the first frame update
-        void Start()
+        void Awake()
         {
             basicEnemyList = new List<GameObject>();
-            SpawnMultEnemies(numStartEnemies);
         }
 
-        // Update is called once per frame
-        void Update()
+        private void Update()
         {
 
         }
@@ -95,7 +93,44 @@ namespace Killcode.Enemy
 
                     // Destroy the object
                     Destroy((GameObject)data);
+
+                    // If there are no more enemies, start the next wave
+                    if(basicEnemyList.Count == 0)
+                    {
+                        onWaveEnd.Raise(this, this);
+                    }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Spawn enemies according to a List of data
+        /// </summary>
+        /// <param name="sender">The component raising the event</param>
+        /// <param name="data">The data being sent</param>
+        public void OnSpawnEnemies(Component sender, object data)
+        {
+            // If the data is not the current type, return
+            if(!(data is List<Vector3>))
+            {
+                return;
+            }
+
+            // Cast the data
+            List<Vector3> enemyPositions = (List<Vector3>)data;
+
+            // Loop through the list of enemy positions
+            foreach(Vector3 pos in enemyPositions)
+            {
+                // Spawn an enemy at the position
+                GameObject newEnemy = Instantiate(basicEnemyPrefab, pos, Quaternion.identity);
+                newEnemy.GetComponent<EnemyController>().position = pos;
+
+                // Set the enemy target to the current target - typically the player
+                newEnemy.GetComponent<EnemyController>().Target = enemyTarget;
+
+                // Add the enemy to the list of enemies
+                basicEnemyList.Add(newEnemy);
             }
         }
 

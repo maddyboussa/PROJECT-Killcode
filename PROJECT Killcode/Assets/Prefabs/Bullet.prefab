@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8747441032410097565}
   - component: {fileID: 1999663726133286555}
-  - component: {fileID: 1703421055617691883}
   - component: {fileID: 2515199491725890898}
   - component: {fileID: 7614054464010310435}
   - component: {fileID: 2230019804213326569}
@@ -88,27 +87,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!50 &1703421055617691883
-Rigidbody2D:
-  serializedVersion: 4
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3799120283915100044}
-  m_BodyType: 0
-  m_Simulated: 1
-  m_UseFullKinematicContacts: 0
-  m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0
-  m_GravityScale: 0
-  m_Material: {fileID: 0}
-  m_Interpolate: 0
-  m_SleepingMode: 1
-  m_CollisionDetection: 0
-  m_Constraints: 4
 --- !u!114 &2515199491725890898
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,6 +100,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   onBulletActive: {fileID: 11400000, guid: bb267fa3d1428f6429ade3cd416ce0fc, type: 2}
+  onKnockbackTriggered: {fileID: 11400000, guid: c6c70f2d99e42d14fa3103909bfded09, type: 2}
   currentBounds:
     serializedVersion: 2
     x: 0
@@ -131,7 +110,7 @@ MonoBehaviour:
   direction: {x: 0, y: 0}
   velocity: {x: 0, y: 0}
   bulletPos: {x: 0, y: 0}
-  bulletSpeed: 200
+  bulletSpeed: 0.5
 --- !u!114 &7614054464010310435
 MonoBehaviour:
   m_ObjectHideFlags: 0

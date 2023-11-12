@@ -21,7 +21,7 @@ namespace Killcode.Weapons
         // Update is called once per frame
         void Update()
         {
-
+            
         }
 
         public IEnumerator SlashAttack(Vector2 startPosition, Vector2 endPosition)
@@ -60,7 +60,7 @@ namespace Killcode.Weapons
                 // Create a bullet and raise the OnBulletFired event
                 Vector2 bulletDirection = ((Vector2)data - (Vector2)transform.position).normalized;
                 Vector2 bulletPos = (Vector2)transform.position;
-                onBulletFired.Raise(this, new BulletSpawnInfo(bulletPos, bulletDirection, weaponStats.GetStat(WeaponStat.basicDamage)));
+                onBulletFired.Raise(this, new BulletSpawnInfo(bulletPos, bulletDirection, weaponStats.GetStat(WeaponStat.basicDamage), WeaponType.Starter));
 
                 // Start cooldown
                 canBasic = false;

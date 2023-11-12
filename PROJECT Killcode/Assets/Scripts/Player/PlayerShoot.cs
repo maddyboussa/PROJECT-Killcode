@@ -12,6 +12,7 @@ public class PlayerShoot : MonoBehaviour
     #region FIELDS
     [SerializeField] private Stats playerStats;
     private Vector2 cursorPosition;
+    private bool basicAttacking;
 
     [Header("Weapons")]
     [SerializeField] private GameEvent onWeaponBasic;
@@ -23,7 +24,19 @@ public class PlayerShoot : MonoBehaviour
     private void Start()
     {
         availableWeapons = gameObject.GetComponentsInChildren<Weapon>().ToList();
+        currentWeapon = availableWeapons[Random.Range(0, availableWeapons.Count)];
         SetWeapon(this, currentWeapon);
+        Debug.Log(currentWeapon);
+    }
+
+    private void Update()
+    {
+        // Check if the player is basic attacking
+        if (basicAttacking)
+        {
+            // Basic Attack with the weapon
+            onWeaponBasic.Raise(this, cursorPosition);
+        }
     }
 
     /// <summary>
@@ -50,8 +63,10 @@ public class PlayerShoot : MonoBehaviour
         // Only trigger once
         if(context.started)
         {
-            // Basic Attack with the weapon
-            onWeaponBasic.Raise(this, cursorPosition);
+            basicAttacking = true;
+        } else if(context.canceled)
+        {
+            basicAttacking = false;
         }
     }
 
@@ -62,6 +77,24 @@ public class PlayerShoot : MonoBehaviour
         {
             // Special attack with the weapon
             onWeaponSpecial.Raise(this, cursorPosition);
+        }
+    }
+
+    public void SetWeapon(Weapon weaponToSet)
+    {
+        if (availableWeapons.Contains(weaponToSet))
+        {
+            foreach (Weapon weapon in availableWeapons)
+            {
+                if (weapon != weaponToSet)
+                {
+                    weapon.gameObject.SetActive(false);
+                }
+                else
+                {
+                    weapon.gameObject.SetActive(true);
+                }
+            }
         }
     }
 
